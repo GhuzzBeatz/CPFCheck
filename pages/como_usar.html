@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="../css/style.css"><script src="../js/util.js"></script></head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">📖 Como Usar</div>
+      <div class="page-sub">Guia rápido de funcionamento</div>
+    </div>
+  </div>
+
+  <div style="max-width:780px;margin:0 auto">
+
+    <div class="sec-card">
+      <div class="sec-head">📋 Validação em Massa</div>
+      <div style="padding:18px;font-size:13px;color:var(--fg2);line-height:1.9">
+        <strong>1.</strong> Clique em <strong>"Validação em Massa"</strong> no menu lateral<br>
+        <strong>2.</strong> Cole os CPFs no campo (um por linha) OU clique em <strong>"Carregar de Arquivo"</strong><br>
+        <strong>3.</strong> Clique em <strong>"Analisar Todos"</strong><br>
+        <strong>4.</strong> Aguarde o processamento — vai aparecer a barra de progresso<br>
+        <strong>5.</strong> Veja os resultados na tabela e clique em <strong>"Exportar CSV"</strong> para salvar<br><br>
+        <div style="background:var(--primary-bg);padding:10px 14px;border-radius:8px;color:var(--primary);font-weight:700;font-size:12px">
+          💡 Dica: o sistema aceita CPFs com ou sem pontuação, e completa com zeros à esquerda se faltar dígitos
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-head">🔎 Validação Individual</div>
+      <div style="padding:18px;font-size:13px;color:var(--fg2);line-height:1.9">
+        <strong>1.</strong> Digite o CPF no campo (aceita com ou sem pontuação)<br>
+        <strong>2.</strong> Clique em <strong>"Analisar CPF"</strong> ou pressione <kbd>Enter</kbd><br>
+        <strong>3.</strong> O resultado aparece logo abaixo — verde para estrutura válida, vermelho para inválida
+      </div>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-head">💡 Formatos de Entrada Aceitos</div>
+      <div style="padding:18px;font-size:13px;color:var(--fg2);line-height:1.9">
+        O app aceita os formatos mais comuns:<br><br>
+        <code style="background:var(--card2);padding:2px 8px;border-radius:4px;font-size:12px">123.456.789-09</code> — Com pontuação completa<br>
+        <code style="background:var(--card2);padding:2px 8px;border-radius:4px;font-size:12px">12345678909</code> — Apenas números<br>
+        <code style="background:var(--card2);padding:2px 8px;border-radius:4px;font-size:12px">123456789-09</code> — Parcialmente formatado<br>
+        <code style="background:var(--card2);padding:2px 8px;border-radius:4px;font-size:12px">2345678909</code> — Com zero implícito (completa com 0 à esquerda)<br><br>
+        Na validação em massa, você pode separar os CPFs por:<br>
+        <code>quebra de linha</code>, <code>vírgula</code> ou <code>ponto e vírgula</code>
+      </div>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-head">📊 O que significam os resultados</div>
+      <div style="padding:18px;font-size:13px;color:var(--fg2);line-height:1.9">
+        <strong style="color:var(--green)">✅ Estrutura Válida:</strong> os dígitos verificadores batem matematicamente com a sequência informada. O formato é consistente.<br><br>
+        <strong style="color:var(--red)">❌ Estrutura Inválida:</strong> o número não passou no cálculo dos dígitos verificadores, indicando que houve erro de digitação, falha de importação ou dado inconsistente.<br><br>
+        <div style="background:var(--orange-bg);padding:10px 14px;border-radius:8px;color:var(--orange);font-weight:700;font-size:12px">
+          ⚠️ Uma estrutura válida NÃO garante que o CPF exista ou pertença a alguém. Apenas indica que a sequência numérica está matematicamente consistente.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>aplicarTemaAtual()</script>
+</body>
+</html>

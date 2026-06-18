@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Gerador de Chaves — Verificador CPF</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e8eaf0; padding: 40px; max-width: 640px; margin: 0 auto }
+  h1 { color: #60a5fa; margin-bottom: 8px }
+  p { color: #a0a8c0; font-size: 14px; margin-bottom: 20px }
+  label { font-size: 11px; font-weight: 800; color: #a0a8c0; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 6px }
+  input { width: 100%; background: #1c2233; border: 1px solid #2a3350; border-radius: 8px; padding: 12px; color: #e8eaf0; font-size: 14px; font-family: inherit; outline: none; margin-bottom: 16px }
+  input:focus { border-color: #60a5fa }
+  button { width: 100%; padding: 14px; background: linear-gradient(135deg,#4f8ef7,#3a7ae2); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer }
+  button:hover { filter: brightness(1.1) }
+  .result { background: #1c2233; border: 2px solid #22c55e; border-radius: 10px; padding: 20px; text-align: center; margin-top: 20px; display: none }
+  .result .key { font-family: monospace; font-size: 22px; color: #22c55e; letter-spacing: .05em; font-weight: 800 }
+  .result .copy { margin-top: 10px; padding: 8px 14px; background: #0f1117; border: 1px solid #2a3350; border-radius: 6px; color: #a0a8c0; font-size: 12px; cursor: pointer }
+  .result .copy:hover { color: #60a5fa }
+</style>
+</head>
+<body>
+
+<h1>🔑 Gerador de Chaves</h1>
+<p>Verificador Matemático de CPF — Ferramenta interna para gerar chaves de ativação para seus clientes.</p>
+
+<label>Número do Pedido / ID do Cliente</label>
+<input id="pedido" type="number" placeholder="Ex: 1001" value="1001">
+
+<button onclick="gerar()">🎲 Gerar Chave</button>
+
+<div class="result" id="result">
+  <div style="font-size:11px;color:#a0a8c0;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Chave de Ativação</div>
+  <div class="key" id="chave"></div>
+  <button class="copy" onclick="copiar()">📋 Copiar</button>
+</div>
+
+<script>
+const SALT   = 'GHZ2026CPFCHECK'
+const PREFIX = 'CPFCHK'
+
+function gerar() {
+  const n = parseInt(document.getElementById('pedido').value) || 1
+  const p1 = String(n).padStart(4, '0')
+  const p2 = btoa(n + SALT).replace(/[^A-Z0-9]/gi, '').slice(0, 4).toUpperCase()
+  const p3 = String((n * 41) % 9999).padStart(4, '0')
+  const chave = `${PREFIX}-${p1}-${p2}-${p3}`
+  document.getElementById('chave').textContent = chave
+  document.getElementById('result').style.display = 'block'
+}
+
+function copiar() {
+  const texto = document.getElementById('chave').textContent
+  navigator.clipboard.writeText(texto)
+  alert('Chave copiada: ' + texto)
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+╔═══════════════════════════════════════════════════════════╗
+║         VERIFICADOR MATEMÁTICO DE CPF                      ║
+║         Validação estrutural de dígitos verificadores      ║
+║                    by GHZ Plugin © 2026                    ║
+╚═══════════════════════════════════════════════════════════╝
+
+📋 DESCRIÇÃO DO SOFTWARE
+
+O Verificador Matemático de CPF é um produto digital para download,
+desenvolvido para uso em computadores com sistema Windows.
+
+Realiza EXCLUSIVAMENTE a validação matemática de CPFs com base nas
+regras dos dígitos verificadores, analisando o formato e a consistência
+dos números informados.
+
+Permite validação individual e em massa, sendo capaz de processar
+listas com grande volume de CPFs e classificar os resultados entre
+válidos e inválidos de acordo com a estrutura matemática.
+
+OBJETIVO:
+Auxiliar empresas e desenvolvedores na validação de formato e
+consistência de dados em formulários, sistemas e bancos de dados,
+contribuindo para a organização e qualidade das informações.
+
+LIMITAÇÕES (IMPORTANTE):
+• NÃO gera CPFs
+• NÃO consulta bases externas
+• NÃO realiza validação de existência junto à Receita Federal
+• NÃO autentica identidade de pessoas
+
+─────────────────────────────────────────────────────────────
+📦 INSTRUÇÕES DE BUILD
+─────────────────────────────────────────────────────────────
+
+1. INSTALAR DEPENDÊNCIAS
+   Abra o terminal/cmd na pasta do projeto e rode:
+       npm install
+
+2. TESTAR O APP (opcional)
+       npm start
+
+3. GERAR O INSTALADOR (.exe)
+       npm run build
+
+   O instalador será criado em:
+       dist/Verificador Matemático de CPF Setup 1.0.0.exe
+
+─────────────────────────────────────────────────────────────
+📁 ESTRUTURA DO PROJETO
+─────────────────────────────────────────────────────────────
+CPFCheck/
+├── main.js                    → Processo principal Electron
+├── index.html                 → Menu lateral + iframe
+├── package.json               → Configurações do projeto
+├── logo.png / logo.ico        → Ícone do app
+├── gerador-cpfcheck.html      → Gerador de chaves (USO INTERNO)
+├── css/
+│   └── style.css              → Visual (claro/escuro)
+├── js/
+│   ├── licenca.js             → Validação de chave
+│   ├── util.js                → Modais + algoritmo de CPF
+│   └── db.js                  → Histórico em JSON
+└── pages/
+    ├── dashboard.html         → Tela inicial com KPIs
+    ├── massa.html             → ★ VALIDAÇÃO EM MASSA
+    ├── unico.html             → Validação individual
+    ├── historico.html         → Últimas análises
+    ├── licenca.html           → Tela de ativação
+    ├── sobre.html             → Informações e limitações
+    └── como_usar.html         → Guia de uso
+
+─────────────────────────────────────────────────────────────
+🔑 SISTEMA DE LICENÇA
+─────────────────────────────────────────────────────────────
+Formato: CPFCHK-0000-XXXX-0000
+
+Para gerar chaves para seus clientes, abra:
+    gerador-cpfcheck.html (no navegador)
+
+Digite o número do pedido do Mercado Livre e gere a chave.
+
+─────────────────────────────────────────────────────────────
+💰 PARA VENDA NO MERCADO LIVRE
+─────────────────────────────────────────────────────────────
+
+TÍTULO SUGERIDO (60 chars):
+  "Verificador Matematico Cpf Validacao Digitos Software Pc"
+
+DESCRIÇÃO PARA O ANÚNCIO:
+
+Software para validação matemática de CPFs com base nas regras
+dos dígitos verificadores. Analisa o formato e a consistência
+dos números informados.
+
+RECURSOS:
+✅ Validação matemática individual
+✅ Validação matemática em massa (até 100.000 registros)
+✅ Importação de arquivos .txt e .csv
+✅ Exportação dos resultados em CSV
+✅ Histórico de análises
+✅ 100% offline
+✅ Interface simples, modo claro e escuro
+
+IDEAL PARA:
+• Conferência interna de bases de dados
+• Validação de formulários
+• Padronização e limpeza de cadastros
+• Desenvolvedores de software
+• Equipes de qualidade de dados
+
+LIMITAÇÕES (deixe MUITO claro no anúncio):
+❌ NÃO gera CPFs
+❌ NÃO consulta a Receita Federal
+❌ NÃO verifica existência de CPFs
+❌ NÃO autentica identidade
+
+Apenas validação MATEMÁTICA dos dígitos verificadores.
+
+─────────────────────────────────────────────────────────────
+🏢 GHZ Plugin © 2026
+📧 ghzplugin@gmail.com
+─────────────────────────────────────────────────────────────

@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/util.js"></script>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">CPF Individual</div>
+      <div class="page-sub">Validacao matematica de um CPF</div>
+    </div>
+  </div>
+
+  <div class="form-card" style="max-width:600px;margin:0 auto">
+    <div class="form-card-title">Digite o CPF para analise matematica</div>
+    <div class="form-row">
+      <div class="form-group fg3">
+        <label class="form-label">CPF (com ou sem pontuacao)</label>
+        <input id="inpCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatarDigitacao(this)" onkeypress="if(event.key==='Enter') verificar()" style="font-size:18px;letter-spacing:.05em;font-family:monospace;text-align:center;padding:14px">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" onclick="verificar()" style="flex:1;justify-content:center;padding:12px">
+        Analisar CPF
+      </button>
+      <button class="btn btn-ghost" onclick="limpar()" style="padding:12px 16px">
+        Limpar
+      </button>
+    </div>
+
+    <div id="resultado" class="resultado-single" style="margin-top:20px"></div>
+
+    <div id="avisoOk"></div>
+    <div id="avisoErro"></div>
+  </div>
+
+  <div class="form-card" style="max-width:600px;margin:16px auto 0">
+    <div class="form-card-title">Sobre a analise</div>
+    <div style="font-size:12px;color:var(--fg2);line-height:1.7">
+      Este software realiza exclusivamente a <strong>validacao matematica dos digitos verificadores</strong>, analisando o formato e a consistencia do numero conforme o algoritmo publico de verificacao.<br><br>
+      <strong>O que e verificado:</strong><br>
+      • Se o numero tem ate 11 digitos (com preenchimento de zeros a esquerda quando necessario)<br>
+      • Se nao e uma sequencia repetida (ex: 11111111111)<br>
+      • Se os dois digitos verificadores batem matematicamente<br><br>
+      <strong>O que NAO e verificado:</strong><br>
+      • Existencia do CPF na Receita Federal<br>
+      • Identidade de pessoas<br>
+      • Situacao cadastral
+    </div>
+  </div>
+
+</div>
+
+<script>
+aplicarTemaAtual()
+const { inserirHistorico } = require('../js/db.js')
+
+function formatarDigitacao(inp) {
+  let v = inp.value.replace(/\D/g, '')
+  if (v.length > 11) v = v.slice(0, 11)
+  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2')
+  inp.value = v
+}
+
+function verificar() {
+  const valor = document.getElementById('inpCPF').value.trim()
+  if (!valor) return aviso('erro', 'Digite um CPF')
+
+  const digitos = limparCPF(valor)
+  const temExcesso = digitos.length > 11
+  const limpo = digitos.padStart(11, '0').slice(-11)
+  const valido = !temExcesso && validarCPF(limpo)
+  const formatado = formatarCPF(limpo)
+
+  const el = document.getElementById('resultado')
+  el.className = 'resultado-single ' + (valido ? 'valido' : 'invalido')
+  el.innerHTML = valido
+    ? `<span class="icone">OK</span><div class="texto">ESTRUTURA VALIDA</div><div class="cpf-show">${formatado}</div><div style="font-size:11px;margin-top:6px;opacity:.7">Digitos verificadores conferem matematicamente</div>`
+    : `<span class="icone">X</span><div class="texto">ESTRUTURA INVALIDA</div><div class="cpf-show">${formatado}</div><div style="font-size:11px;margin-top:6px;opacity:.7">${temExcesso ? 'CPF com mais de 11 digitos.' : 'Digitos verificadores nao conferem'}</div>`
+
+  inserirHistorico({
+    total: 1,
+    validos: valido ? 1 : 0,
+    invalidos: valido ? 0 : 1,
+    modo: 'individual'
+  })
+}
+
+function limpar() {
+  document.getElementById('inpCPF').value = ''
+  document.getElementById('resultado').style.display = 'none'
+  document.getElementById('resultado').className = 'resultado-single'
+  document.getElementById('inpCPF').focus()
+}
+
+document.getElementById('inpCPF').focus()
+</script>
+</body>
+</html>

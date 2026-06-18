@@ -1,0 +1,406 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/util.js"></script>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Validacao em Massa</div>
+      <div class="page-sub">Analise matematica de multiplos CPFs para conferencia interna de bases</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr)">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Total Verificado</div>
+        <div class="kpi-val" id="kpiTotal">0</div>
+        <div class="kpi-sub">CPFs processados</div>
+      </div>
+      <div class="kpi-icon ki-blue">T</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Verdadeiros</div>
+        <div class="kpi-val" id="kpiValidos" style="color:var(--green)">0</div>
+        <div class="kpi-sub">estrutura valida</div>
+      </div>
+      <div class="kpi-icon ki-green">V</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Falsos</div>
+        <div class="kpi-val" id="kpiInvalidos" style="color:var(--red)">0</div>
+        <div class="kpi-sub">estrutura invalida</div>
+      </div>
+      <div class="kpi-icon ki-red">F</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Duplicados</div>
+        <div class="kpi-val" id="kpiDuplicados" style="color:var(--purple)">0</div>
+        <div class="kpi-sub">ocorrencias repetidas</div>
+      </div>
+      <div class="kpi-icon ki-purple">D</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Taxa Verdadeiro</div>
+        <div class="kpi-val sm" id="kpiTaxa" style="color:var(--primary)">0%</div>
+        <div class="kpi-sub">sobre o total</div>
+      </div>
+      <div class="kpi-icon ki-orange">%</div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-card-title">Cole os CPFs (um por linha) ou carregue arquivo XLSX/CSV/TXT</div>
+    <textarea id="entrada" placeholder="Exemplo:
+12345678909
+00123456789
+123.456.789-09"></textarea>
+
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="verificarMassa()">Analisar Todos</button>
+      <button class="btn btn-ghost" onclick="carregarArquivo()">Carregar Arquivo (.xlsx/.csv/.txt)</button>
+      <button class="btn btn-ghost" onclick="baixarModeloCSV()">Baixar Planilha Modelo (XLSX)</button>
+      <button class="btn btn-ghost" onclick="limpar()">Limpar</button>
+      <div style="flex:1"></div>
+      <div style="align-self:center;font-size:11px;color:var(--muted)" id="contador">0 CPFs detectados</div>
+    </div>
+
+    <div id="avisoOk"></div>
+    <div id="avisoErro"></div>
+  </div>
+
+  <div id="progressoBox" style="display:none" class="form-card">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="progressoLabel">Processando...</div>
+    <div class="progresso">
+      <div class="progresso-bar" id="progressoBar" style="width:0%">0%</div>
+    </div>
+  </div>
+
+  <div class="sec-card" id="resultadosBox" style="display:none">
+    <div class="sec-head">
+      <span>Resultados da Analise Matematica</span>
+      <div style="display:flex;gap:8px">
+        <select id="filtro" onchange="renderTabela()" style="padding:6px 10px;border-radius:6px;font-size:12px">
+          <option value="todos">Todos</option>
+          <option value="validos">Apenas Verdadeiros</option>
+          <option value="invalidos">Apenas Falsos</option>
+          <option value="duplicados">Apenas Duplicados</option>
+        </select>
+        <button class="btn btn-ghost" onclick="exportarXLSX()" style="padding:6px 12px;font-size:12px">Exportar Resultado XLSX</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin:0;border:none;border-radius:0;max-height:500px;overflow-y:auto">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>CPF Original</th>
+            <th>CPF Formatado</th>
+            <th style="width:220px">Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyResultados">
+          <tr><td colspan="4" class="empty">Cole os CPFs acima e clique em Analisar</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+aplicarTemaAtual()
+const { inserirHistorico } = require('../js/db.js')
+const { ipcRenderer } = require('electron')
+const XLSX = require('xlsx')
+
+let resultados = []
+
+document.getElementById('entrada').addEventListener('input', atualizarContador)
+
+function atualizarContador() {
+  const linhas = extrairCPFs()
+  document.getElementById('contador').textContent = linhas.length + ' CPFs detectados'
+}
+
+function extrairCPFs() {
+  const texto = document.getElementById('entrada').value || ''
+  const linhas = texto.replace(/\r/g, '').split('\n')
+  const cpfs = []
+
+  for (const linhaRaw of linhas) {
+    let linha = String(linhaRaw || '').replace(/^\uFEFF/, '').trim()
+    if (!linha) continue
+
+    // Se vier de planilha CSV/TXT, pega somente a primeira coluna
+    const primeiraColuna = linha.split(/\t|;|,/)[0].trim().replace(/^"|"$/g, '')
+    if (!primeiraColuna) continue
+    if (primeiraColuna.toLowerCase() === 'cpf') continue
+
+    cpfs.push(primeiraColuna)
+  }
+
+  return cpfs
+}
+
+function normalizarCPF(valor) {
+  const digitos = limparCPF(valor)
+  const excesso = digitos.length > 11
+  const limpo = digitos.padStart(11, '0').slice(-11)
+  const chaveDuplicidade = excesso ? ('EXCESSO:' + digitos) : limpo
+  return { digitos, excesso, limpo, chaveDuplicidade }
+}
+
+function limpar() {
+  confirmar('Limpar tudo? Isso apaga a entrada e os resultados atuais.', ok => {
+    if (!ok) return
+    document.getElementById('entrada').value = ''
+    document.getElementById('contador').textContent = '0 CPFs detectados'
+    document.getElementById('resultadosBox').style.display = 'none'
+    resultados = []
+    atualizarKPIs()
+  })
+}
+
+async function carregarArquivo() {
+  const r = await ipcRenderer.invoke('abrir-arquivo')
+  if (!r.sucesso) return
+
+  if (r.tipo === 'excel' && r.base64) {
+    const wb = XLSX.read(r.base64, { type: 'base64' })
+    const nomeAba = wb.SheetNames[0]
+    const ws = wb.Sheets[nomeAba]
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' })
+
+    const cpfs = []
+    for (let i = 0; i < aoa.length; i++) {
+      const valor = String((aoa[i] && aoa[i][0]) || '').trim()
+      if (!valor) continue
+      if (i === 0 && valor.toLowerCase() === 'cpf') continue
+      cpfs.push(valor)
+    }
+
+    document.getElementById('entrada').value = cpfs.join('\n')
+    atualizarContador()
+    aviso('ok', `Arquivo Excel carregado: ${cpfs.length} CPF(s).`)
+    return
+  }
+
+  document.getElementById('entrada').value = r.conteudo || ''
+  atualizarContador()
+  aviso('ok', 'Arquivo carregado para analise.')
+}
+
+async function baixarModeloCSV() {
+  const linhas = [
+    ['CPF', 'RESULTADO'],
+    ['', ''],
+    ['', ''],
+    ['', ''],
+    ['', '']
+  ]
+  const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.aoa_to_sheet(linhas)
+  ws['!cols'] = [{ wch: 20 }, { wch: 28 }]
+  XLSX.utils.book_append_sheet(wb, ws, 'MODELO')
+  const xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
+
+  const agora = new Date()
+  const stamp = `${agora.getFullYear()}${String(agora.getMonth()+1).padStart(2,'0')}${String(agora.getDate()).padStart(2,'0')}_${String(agora.getHours()).padStart(2,'0')}${String(agora.getMinutes()).padStart(2,'0')}${String(agora.getSeconds()).padStart(2,'0')}`
+  const nome = `Modelo_Verificacao_CPF_${stamp}.xlsx`
+  const r = await ipcRenderer.invoke('salvar-arquivo', {
+    base64: xlsxBuffer.toString('base64'),
+    nomeArquivo: nome,
+    extensao: 'xlsx',
+    filtro: 'Excel'
+  })
+  if (r.sucesso) {
+    await ipcRenderer.invoke('mostrar-arquivo-na-pasta', r.caminho)
+    avisoModal(
+      'Planilha modelo criada com sucesso.\n\n' +
+      'A pasta foi aberta automaticamente.\n\n' +
+      'Se o Excel abrir em somente leitura, clique em "Editar Pasta de Trabalho".'
+    )
+  }
+}
+
+async function verificarMassa() {
+  const linhas = extrairCPFs()
+  if (!linhas.length) return aviso('erro', 'Cole pelo menos 1 CPF para analisar')
+  if (linhas.length > 100000) return aviso('erro', 'Limite maximo de 100.000 CPFs por analise')
+
+  resultados = []
+  const progBox = document.getElementById('progressoBox')
+  const progBar = document.getElementById('progressoBar')
+  const progLbl = document.getElementById('progressoLabel')
+  progBox.style.display = 'block'
+
+  const normalizados = linhas.map(normalizarCPF)
+  const freq = new Map()
+  for (const n of normalizados) {
+    freq.set(n.chaveDuplicidade, (freq.get(n.chaveDuplicidade) || 0) + 1)
+  }
+
+  const total = linhas.length
+  const batch = Math.max(100, Math.ceil(total / 100))
+
+  for (let i = 0; i < total; i++) {
+    const original = linhas[i]
+    const n = normalizados[i]
+
+    const valido = !n.excesso && validarCPF(n.limpo)
+    const duplicado = (freq.get(n.chaveDuplicidade) || 0) > 1
+
+    let status = valido ? 'VERDADEIRO' : 'FALSO'
+    if (duplicado) status += ' - DUPLICADO'
+
+    resultados.push({
+      indice: i + 1,
+      original,
+      formatado: formatarCPF(n.limpo),
+      valido,
+      duplicado,
+      status,
+      excesso: n.excesso
+    })
+
+    if (i % batch === 0 || i === total - 1) {
+      const pct = Math.round(((i + 1) / total) * 100)
+      progBar.style.width = pct + '%'
+      progBar.textContent = pct + '%'
+      progLbl.textContent = `Processando ${i + 1} de ${total}...`
+      await new Promise(r => setTimeout(r, 0))
+    }
+  }
+
+  progLbl.textContent = `Concluido: ${total} CPFs analisados`
+
+  const validos = resultados.filter(r => r.valido).length
+  const invalidos = total - validos
+
+  inserirHistorico({ total, validos, invalidos, modo: 'massa' })
+
+  atualizarKPIs()
+  renderTabela()
+  document.getElementById('resultadosBox').style.display = 'block'
+
+  setTimeout(() => { progBox.style.display = 'none' }, 1200)
+}
+
+function atualizarKPIs() {
+  const total = resultados.length
+  const val = resultados.filter(r => r.valido).length
+  const inv = total - val
+  const dup = resultados.filter(r => r.duplicado).length
+  const taxa = total ? ((val / total) * 100).toFixed(1) : 0
+
+  document.getElementById('kpiTotal').textContent = total.toLocaleString('pt-BR')
+  document.getElementById('kpiValidos').textContent = val.toLocaleString('pt-BR')
+  document.getElementById('kpiInvalidos').textContent = inv.toLocaleString('pt-BR')
+  document.getElementById('kpiDuplicados').textContent = dup.toLocaleString('pt-BR')
+  document.getElementById('kpiTaxa').textContent = taxa + '%'
+}
+
+function renderTabela() {
+  const filtro = document.getElementById('filtro').value
+  let lista = resultados
+  if (filtro === 'validos') lista = resultados.filter(r => r.valido)
+  if (filtro === 'invalidos') lista = resultados.filter(r => !r.valido)
+  if (filtro === 'duplicados') lista = resultados.filter(r => r.duplicado)
+
+  const tbody = document.getElementById('tbodyResultados')
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum resultado com esse filtro</td></tr>'
+    return
+  }
+
+  const mostrar = lista.slice(0, 1000)
+  const avisoTxt = lista.length > 1000
+    ? `<tr><td colspan="4" class="empty">Mostrando 1000 de ${lista.length.toLocaleString('pt-BR')} resultados. Exporte XLSX para baixar todos.</td></tr>`
+    : ''
+
+  tbody.innerHTML = mostrar.map(r => {
+    const classe = r.duplicado ? 'b-purple' : (r.valido ? 'b-green' : 'b-red')
+    return `
+      <tr>
+        <td style="font-family:monospace;color:var(--muted)">${r.indice}</td>
+        <td style="font-family:monospace">${r.original}</td>
+        <td style="font-family:monospace;font-weight:700">${r.formatado}</td>
+        <td><span class="badge ${classe}">${r.status}</span></td>
+      </tr>`
+  }).join('') + avisoTxt
+}
+
+function gerarResumo() {
+  const total = resultados.length
+  const verdadeiros = resultados.filter(r => r.valido).length
+  const falsos = total - verdadeiros
+  const duplicados = resultados.filter(r => r.duplicado).length
+  const verdadeirosDuplicados = resultados.filter(r => r.valido && r.duplicado).length
+  const falsosDuplicados = resultados.filter(r => !r.valido && r.duplicado).length
+
+  return {
+    total,
+    verdadeiros,
+    falsos,
+    duplicados,
+    verdadeirosDuplicados,
+    falsosDuplicados
+  }
+}
+
+async function exportarXLSX() {
+  if (!resultados.length) return aviso('erro', 'Nenhum resultado para exportar')
+
+  const rsm = gerarResumo()
+  const resumo = [
+    ['RESUMO', 'VALOR'],
+    ['TOTAL_CPFS_VERIFICADOS', rsm.total],
+    ['VERDADEIROS', rsm.verdadeiros],
+    ['FALSOS', rsm.falsos],
+    ['DUPLICADOS', rsm.duplicados],
+    ['VERDADEIROS_DUPLICADOS', rsm.verdadeirosDuplicados],
+    ['FALSOS_DUPLICADOS', rsm.falsosDuplicados]
+  ]
+
+  const detalhes = [
+    ['CPF', 'RESULTADO']
+  ]
+  resultados.forEach(item => {
+    detalhes.push([item.formatado, item.status])
+  })
+
+  const wb = XLSX.utils.book_new()
+  const wsResumo = XLSX.utils.aoa_to_sheet(resumo)
+  wsResumo['!cols'] = [{ wch: 34 }, { wch: 18 }]
+  XLSX.utils.book_append_sheet(wb, wsResumo, 'RESUMO')
+
+  const wsResultado = XLSX.utils.aoa_to_sheet(detalhes)
+  wsResultado['!cols'] = [{ wch: 22 }, { wch: 28 }]
+  XLSX.utils.book_append_sheet(wb, wsResultado, 'RESULTADOS')
+
+  const xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
+  const nome = `Resultado_Verificacao_CPF_${new Date().toISOString().split('T')[0]}.xlsx`
+
+  const r = await ipcRenderer.invoke('salvar-arquivo', {
+    base64: xlsxBuffer.toString('base64'),
+    nomeArquivo: nome,
+    extensao: 'xlsx',
+    filtro: 'Excel'
+  })
+
+  if (r.sucesso) avisoModal('Resultado exportado com sucesso.')
+  else if (r.motivo !== 'cancelado') aviso('erro', 'Erro ao salvar: ' + (r.mensagem || ''))
+}
+</script>
+</body>
+</html>

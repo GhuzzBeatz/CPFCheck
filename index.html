@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Verificador Matemático de CPF</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/licenca.js"></script>
+  <script>
+    if (!licencaAtivaCC()) {
+      window.location.replace('pages/licenca.html')
+    }
+  </script>
+</head>
+<body>
+<div class="container">
+
+  <div class="menu">
+    <div class="menu-logo">
+      <div class="logo-icon">🔢</div>
+      <span class="logo-text">Verifica<span class="logo-accent">CPF</span></span>
+    </div>
+
+    <nav class="menu-nav">
+      <button class="nav-btn active" onclick="ir('pages/dashboard.html',this)">
+        <span class="nav-icon">🏠</span> Dashboard
+      </button>
+
+      <div class="nav-sep"></div>
+      <div class="nav-group-label">Validação</div>
+
+      <button class="nav-btn" onclick="ir('pages/unico.html',this)">
+        <span class="nav-icon">🔎</span> CPF Individual
+      </button>
+      <button class="nav-btn" onclick="ir('pages/massa.html',this)">
+        <span class="nav-icon">📋</span> Validação em Massa
+      </button>
+
+      <div class="nav-sep"></div>
+      <div class="nav-group-label">Sistema</div>
+
+      <button class="nav-btn" onclick="ir('pages/historico.html',this)">
+        <span class="nav-icon">📂</span> Histórico
+      </button>
+      <button class="nav-btn" onclick="ir('pages/como_usar.html',this)">
+        <span class="nav-icon">📖</span> Como Usar
+      </button>
+      <button class="nav-btn" onclick="ir('pages/sobre.html',this)">
+        <span class="nav-icon">ℹ️</span> Sobre
+      </button>
+    </nav>
+
+    <div class="menu-footer">
+      <button class="btn-tema" id="btnTema" onclick="alternarTema()">
+        <span id="temaIcon">🌙</span>
+        <span id="temaLabel">Modo Escuro</span>
+      </button>
+      <div class="menu-footer-brand">Desenvolvido por</div>
+      <div class="menu-footer-name">GHZ Plugin</div>
+    </div>
+  </div>
+
+  <div class="conteudo">
+    <iframe id="frame" src="pages/dashboard.html"></iframe>
+  </div>
+
+</div>
+<script>
+  const tema = localStorage.getItem('@CPFCHECK:tema') || 'light'
+  document.documentElement.setAttribute('data-tema', tema)
+  document.getElementById('temaIcon').textContent  = tema === 'light' ? '🌙' : '☀️'
+  document.getElementById('temaLabel').textContent = tema === 'light' ? 'Modo Escuro' : 'Modo Claro'
+
+  function ir(pagina, btn) {
+    document.getElementById('frame').src = pagina
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'))
+    if (btn) btn.classList.add('active')
+  }
+
+  function alternarTema() {
+    const atual = localStorage.getItem('@CPFCHECK:tema') || 'light'
+    const novo  = atual === 'light' ? 'dark' : 'light'
+    localStorage.setItem('@CPFCHECK:tema', novo)
+    document.documentElement.setAttribute('data-tema', novo)
+    document.getElementById('temaIcon').textContent  = novo === 'light' ? '🌙' : '☀️'
+    document.getElementById('temaLabel').textContent = novo === 'light' ? 'Modo Escuro' : 'Modo Claro'
+    const frame = document.getElementById('frame')
+    frame.src = frame.src
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="../css/style.css"><script src="../js/util.js"></script></head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">🏠 Dashboard</div>
+      <div class="page-sub" id="dataHoje"></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Total Analisado</div>
+        <div class="kpi-val" id="kpiTotal">0</div>
+        <div class="kpi-sub">CPFs já processados</div>
+      </div>
+      <div class="kpi-icon ki-blue">🔍</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Estrutura Válida</div>
+        <div class="kpi-val" id="kpiValidos" style="color:var(--green)">0</div>
+        <div class="kpi-sub">total acumulado</div>
+      </div>
+      <div class="kpi-icon ki-green">✅</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Estrutura Inválida</div>
+        <div class="kpi-val" id="kpiInvalidos" style="color:var(--red)">0</div>
+        <div class="kpi-sub">total acumulado</div>
+      </div>
+      <div class="kpi-icon ki-red">❌</div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Análises</div>
+        <div class="kpi-val" id="kpiSessoes">0</div>
+        <div class="kpi-sub">sessões realizadas</div>
+      </div>
+      <div class="kpi-icon ki-purple">📊</div>
+    </div>
+  </div>
+
+  <!-- Aviso de validação matemática -->
+  <div class="form-card" style="border-left:4px solid var(--primary);margin-bottom:16px">
+    <div style="font-size:13px;color:var(--fg);line-height:1.6">
+      <strong>ℹ️ Sobre o software:</strong> O Verificador Matemático de CPF realiza <strong>exclusivamente</strong> a validação matemática dos dígitos verificadores, analisando o formato e a consistência estrutural dos números. O sistema <strong>não consulta bases externas</strong>, <strong>não verifica existência na Receita Federal</strong> e <strong>não autentica identidade de pessoas</strong>.
+    </div>
+  </div>
+
+  <!-- Ações rápidas -->
+  <div class="sec-card">
+    <div class="sec-head">⚡ Ações Rápidas</div>
+    <div style="padding:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+      <a href="massa.html" style="text-decoration:none">
+        <div class="form-card" style="margin:0;cursor:pointer;text-align:center;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size:40px;margin-bottom:8px">📋</div>
+          <div style="font-weight:800;color:var(--fg);font-size:14px">Validação em Massa</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Analisar vários CPFs de uma vez</div>
+        </div>
+      </a>
+      <a href="unico.html" style="text-decoration:none">
+        <div class="form-card" style="margin:0;cursor:pointer;text-align:center" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size:40px;margin-bottom:8px">🔎</div>
+          <div style="font-weight:800;color:var(--fg);font-size:14px">CPF Individual</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Analisar um CPF por vez</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Últimas verificações -->
+  <div class="sec-card">
+    <div class="sec-head">📂 Últimas Análises</div>
+    <div class="tbl-wrap" style="margin:0;border:none;border-radius:0">
+      <table>
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Modo</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:right">Válidos</th>
+            <th style="text-align:right">Inválidos</th>
+          </tr>
+        </thead>
+        <tbody id="tbHist"><tr><td colspan="5" class="empty">Nenhuma análise ainda</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+aplicarTemaAtual()
+const { listarHistorico } = require('../js/db.js')
+
+document.getElementById('dataHoje').textContent = new Date().toLocaleDateString('pt-BR', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+})
+
+function carregar() {
+  const hist = listarHistorico()
+  let total = 0, validos = 0, invalidos = 0
+  hist.forEach(h => {
+    total += Number(h.total || 0)
+    validos += Number(h.validos || 0)
+    invalidos += Number(h.invalidos || 0)
+  })
+
+  document.getElementById('kpiTotal').textContent     = total.toLocaleString('pt-BR')
+  document.getElementById('kpiValidos').textContent   = validos.toLocaleString('pt-BR')
+  document.getElementById('kpiInvalidos').textContent = invalidos.toLocaleString('pt-BR')
+  document.getElementById('kpiSessoes').textContent   = hist.length.toLocaleString('pt-BR')
+
+  const tbody = document.getElementById('tbHist')
+  if (!hist.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhuma análise ainda. Comece validando CPFs!</td></tr>'
+    return
+  }
+
+  tbody.innerHTML = hist.slice(0, 10).map(h => `
+    <tr>
+      <td>${h.criado_em}</td>
+      <td><span class="badge ${h.modo === 'massa' ? 'b-blue' : 'b-purple'}">${h.modo === 'massa' ? '📋 Massa' : '🔎 Individual'}</span></td>
+      <td style="text-align:right;font-weight:700">${Number(h.total).toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;color:var(--green);font-weight:700">${Number(h.validos).toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;color:var(--red);font-weight:700">${Number(h.invalidos).toLocaleString('pt-BR')}</td>
+    </tr>
+  `).join('')
+}
+
+carregar()
+</script>
+</body>
+</html>

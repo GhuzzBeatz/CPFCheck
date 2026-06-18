@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><link rel="stylesheet" href="../css/style.css"><script src="../js/util.js"></script></head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">📂 Histórico</div>
+      <div class="page-sub">Últimas 50 verificações realizadas</div>
+    </div>
+    <button class="btn btn-danger" onclick="limpar()">🗑️ Limpar Histórico</button>
+  </div>
+
+  <div class="sec-card">
+    <div class="tbl-wrap" style="margin:0;border:none;border-radius:0">
+      <table>
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Modo</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:right">Válidos</th>
+            <th style="text-align:right">Inválidos</th>
+            <th style="text-align:right">Taxa</th>
+          </tr>
+        </thead>
+        <tbody id="tbHist"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="avisoOk"></div>
+  <div id="avisoErro"></div>
+
+</div>
+
+<script>
+aplicarTemaAtual()
+const { listarHistorico, limparHistorico } = require('../js/db.js')
+
+function render() {
+  const lista = listarHistorico()
+  const tbody = document.getElementById('tbHist')
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhuma verificação registrada ainda</td></tr>'
+    return
+  }
+  tbody.innerHTML = lista.map(h => {
+    const taxa = h.total > 0 ? ((h.validos / h.total) * 100).toFixed(1) : 0
+    return `
+      <tr>
+        <td>${h.criado_em}</td>
+        <td><span class="badge ${h.modo === 'massa' ? 'b-blue' : 'b-purple'}">${h.modo === 'massa' ? '📋 Massa' : '🔎 Individual'}</span></td>
+        <td style="text-align:right;font-weight:700">${Number(h.total).toLocaleString('pt-BR')}</td>
+        <td style="text-align:right;color:var(--green);font-weight:700">${Number(h.validos).toLocaleString('pt-BR')}</td>
+        <td style="text-align:right;color:var(--red);font-weight:700">${Number(h.invalidos).toLocaleString('pt-BR')}</td>
+        <td style="text-align:right;font-weight:700;color:var(--primary)">${taxa}%</td>
+      </tr>
+    `
+  }).join('')
+}
+
+function limpar() {
+  confirmar('Apagar todo o histórico? Esta ação não pode ser desfeita.', ok => {
+    if (!ok) return
+    limparHistorico()
+    aviso('ok', 'Histórico limpo com sucesso')
+    render()
+  })
+}
+
+render()
+</script>
+</body>
+</html>
