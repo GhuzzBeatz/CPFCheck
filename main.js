@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 const { spawnSync } = require('child_process')
+const createLocalLicenseGate = require('./js/local-license-gate')
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) app.quit()
 
 app.setName('Verificador Matemático de CPF')
 
@@ -12,6 +16,16 @@ function getDataDir() {
 }
 
 let win = null
+const licenseGate = createLocalLicenseGate({
+  storageKey: '@CPFCHECK:licenca', prefix: 'CPFCHK', salt: 'GHZ2026CPFCHECK', multiplier: 41
+})
+
+app.on('second-instance', () => {
+  if (!win) return
+  if (win.isMinimized()) win.restore()
+  win.show()
+  win.focus()
+})
 
 function createWindow() {
   const dir = getDataDir()
@@ -32,6 +46,7 @@ function createWindow() {
       nodeIntegrationInSubFrames: true,
       contextIsolation: false,
       webSecurity: false,
+      devTools: !app.isPackaged,
       additionalArguments: ['--data-dir=' + dir]
     }
   }
@@ -47,7 +62,7 @@ function createWindow() {
 
   win = new BrowserWindow(windowOptions)
 
-  win.loadFile('index.html')
+  licenseGate.attach(win)
 
   win.once('ready-to-show', () => {
     win.show()
@@ -116,6 +131,16 @@ ipcMain.handle('abrir-arquivo', async () => {
   }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(async () => {
+  if (!gotSingleInstanceLock) return
+  createWindow()
+  await win.loadFile('pages/licenca.html')
+  if (await licenseGate.authorizeFromStorage(win)) await win.loadFile('index.html')
+})
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
-app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+    win.loadFile('pages/licenca.html').catch(() => {})
+  }
+})
